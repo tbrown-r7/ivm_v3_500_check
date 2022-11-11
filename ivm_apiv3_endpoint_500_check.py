@@ -1,10 +1,10 @@
 """Tool used to replicate any APIv3 500 error codes on test environments"""
 
 import warnings
+#import concurrent.futures as cf
+import os
 import requests
 from requests.auth import HTTPBasicAuth
-import concurrent.futures as cf
-import os
 
 # Constants
 CONSOLE_URL = "https://bane2.vuln.lax.rapid7.com:3780"
@@ -13,8 +13,9 @@ ENDPOINT = "solutions"
 USER = os.environ["CONSOLE_USER"]
 PSWD = os.environ["CONSOLE_PASS"]
 # Size and page the customer was experiencing 5xx codes
-CUSTOMER_SIZE = 1
-CUSTOMER_PAGE = 2336
+#TODO - make into cli args
+CUSTOMER_SIZE = 10
+CUSTOMER_PAGE = 2343
 # Calculates which resources to test based on the original size and page above
 PAGE_START = CUSTOMER_SIZE * CUSTOMER_PAGE
 PAGE_END = CUSTOMER_SIZE * (CUSTOMER_PAGE + 1)
@@ -23,12 +24,12 @@ def get_response_code(page_num:int = 0) -> int:
     """Handles the request auth and query params.
     Needs a page number,otherwise starts on page 0."""
     # Keep size = 1 for testing individual resources
-    size = 1
-    query_params = f"size={size}&page={page_num}"
+    SIZE = 1
+    query_params = f"size={SIZE}&page={page_num}"
     url = f"{CONSOLE_URL}/api/3/{ENDPOINT}?{query_params}"
-    print(f"Sending request to {url}...")
+    # print(f"Sending request to {url}...")
     code = requests.get(url, auth=HTTPBasicAuth(USER, PSWD), verify=False).status_code
-    print(f"Status code: {code}")
+    # print(f"Status code: {code}")
     return code
 
 def main():
@@ -37,17 +38,17 @@ def main():
     Terminates the loop on any 4xx codes."""
     current_page = max(0, PAGE_START)
     bad_resources = []
-    with cf.ThreadPoolExecutor(max_workers=5) as executor:
-        while current_page < PAGE_END:
-            # Passes current page to use as a query parameter
-            response_code = executor.submit(get_response_code, current_page)
-            # TODO - get executor.result() and compare it below.
-            if response_code >= 500:
-                bad_resources.append(current_page)
-            elif response_code >= 400:
-                print("Client-side error. Exiting test.")
-                exit()
-            current_page += 1
+#    with cf.ThreadPoolExecutor(max_workers=5) as executor:
+    while current_page < PAGE_END:
+        # Passes current page to use as a query parameter
+        response_code = get_response_code(current_page) #executor.submit(get_response_code, current_page).result()
+        # TODO - get executor.result() and compare it below.
+        if response_code >= 500:
+            bad_resources.append(current_page)
+        elif response_code >= 400:
+            print("Client-side error. Exiting test.")
+            exit()
+        current_page += 1
 
     print("Requests complete.")
     # If the list isn't empty, print the bad resources found.
