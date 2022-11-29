@@ -7,14 +7,14 @@ import requests
 from requests.auth import HTTPBasicAuth
 
 # Constants
-CONSOLE_URL = "https://bane2.vuln.lax.rapid7.com:3780"
-ENDPOINT = "solutions"
+CONSOLE_URL = os.environ["CONSOLE_URL"]
+ENDPOINT = os.environ["ENDPOINT"]
 USER = os.environ["CONSOLE_USER"]
 PSWD = os.environ["CONSOLE_PASS"]
 # Size and page the customer was experiencing 5xx codes
-CUSTOMER_SIZE = 10
-CUSTOMER_PAGE = 2351
-THREAD_COUNT = 5
+CUSTOMER_SIZE = os.environ["CUST_SIZE"]
+CUSTOMER_PAGE = os.environ["CUST_PAGE"]
+THREAD_COUNT = 10
 # Calculates which resources to test based on the customer's query params
 PAGE_START = CUSTOMER_SIZE * CUSTOMER_PAGE
 PAGE_END = CUSTOMER_SIZE * (CUSTOMER_PAGE + 1)
@@ -24,9 +24,9 @@ def get_response_code(page_num:int = 0) -> int:
     Terminates the loop on any 4xx codes."""
     query_params = f"size=1&page={page_num}"
     url = f"{CONSOLE_URL}/api/3/{ENDPOINT}?{query_params}"
-    # print(f"Sending request to {url}...")
+    print(f"Sending request to {url}...")
     code = requests.get(url, auth=HTTPBasicAuth(USER, PSWD), verify=False, timeout=90).status_code
-    # print(f"Status code: {code}")
+    print(f"Status code: {code}")
     if 400 <= code < 500:
         print(f"Client-side error. Status Code {code}.\nExiting test.")
         exit()
@@ -40,7 +40,7 @@ def main():
         if THREAD_COUNT > 5:
             print("Thread count exceeds recommended number of 5.\
                 \nServer responses may slow down as a result.")
-        print(f"Sending {THREAD_COUNT} requests at a time to resources {PAGE_START} - {PAGE_END}...")
+        print(f"Sending {THREAD_COUNT} requests at a time to resources {PAGE_START}-{PAGE_END}...")
         results_dict = {
             # Dict in {Future:page_num} form.
             executor.submit(get_response_code, current_page): current_page
