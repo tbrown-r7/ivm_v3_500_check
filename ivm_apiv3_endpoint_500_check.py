@@ -8,12 +8,11 @@ from requests.auth import HTTPBasicAuth
 
 # Constants
 CONSOLE_URL = os.environ["CONSOLE_URL"]
-ENDPOINT = os.environ["ENDPOINT"]
 USER = os.environ["CONSOLE_USER"]
 PSWD = os.environ["CONSOLE_PASS"]
 # Size and page the customer was experiencing 5xx codes
-CUSTOMER_SIZE = os.environ["CUST_SIZE"]
-CUSTOMER_PAGE = os.environ["CUST_PAGE"]
+CUSTOMER_PAGE = int(os.environ["CUST_PAGE"])
+CUSTOMER_SIZE = int(os.environ["CUST_SIZE"])
 THREAD_COUNT = 10
 # Calculates which resources to test based on the customer's query params
 PAGE_START = CUSTOMER_SIZE * CUSTOMER_PAGE
@@ -23,7 +22,7 @@ def get_response_code(page_num:int = 0) -> int:
     """Handles the request auth and query params.
     Terminates the loop on any 4xx codes."""
     query_params = f"size=1&page={page_num}"
-    url = f"{CONSOLE_URL}/api/3/{ENDPOINT}?{query_params}"
+    url = f"{CONSOLE_URL}?{query_params}"
     print(f"Sending request to {url}...")
     code = requests.get(url, auth=HTTPBasicAuth(USER, PSWD), verify=False, timeout=90).status_code
     print(f"Status code: {code}")
@@ -65,6 +64,7 @@ with warnings.catch_warnings():
     if __name__ == "__main__":
         main()
 
-#TODO - Exception (KeyError) catching for env variables
-#TODO - make into cli tool with passable args for CUSTOMER_SIZE, CUSTOMER_PAGE
+#TODO - Exception (KeyError) catching for bad env variables
+#TODO - Add real logging
+#TODO - Optional verify env var
 #TODO - Replace warnings.simplefilter() with with urllib3 warning handling
