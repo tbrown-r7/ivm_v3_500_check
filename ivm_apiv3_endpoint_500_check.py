@@ -36,8 +36,8 @@ def main():
     Prints any resources that responded with a 5xx code."""
     bad_resources = []
     with cf.ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-        if THREAD_COUNT > 5:
-            print("Thread count exceeds recommended number of 5.\
+        if THREAD_COUNT > 10:
+            print("Thread count exceeds recommended number.\
                 \nServer responses may slow down as a result.")
         print(f"Sending {THREAD_COUNT} requests at a time to resources {PAGE_START}-{PAGE_END}...")
         results_dict = {
